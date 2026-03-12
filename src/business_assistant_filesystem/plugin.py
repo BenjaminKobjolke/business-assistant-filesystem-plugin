@@ -81,6 +81,18 @@ def _fs_copy_file(ctx: RunContext[Deps], source: str, destination: str) -> str:
     return _get_service(ctx).copy_file(source, destination)
 
 
+def _fs_delete_file(ctx: RunContext[Deps], path: str) -> str:
+    """Delete a file. Only files can be deleted, not directories."""
+    logger.info("fs_delete_file: path=%r", path)
+    return _get_service(ctx).delete_file(path)
+
+
+def _fs_move_file(ctx: RunContext[Deps], source: str, destination: str) -> str:
+    """Move or rename a file. Both paths must be within allowed paths."""
+    logger.info("fs_move_file: source=%r destination=%r", source, destination)
+    return _get_service(ctx).move_file(source, destination)
+
+
 def register(registry: PluginRegistry) -> None:
     """Register the filesystem plugin with the plugin registry.
 
@@ -107,6 +119,8 @@ def register(registry: PluginRegistry) -> None:
         Tool(_fs_get_file, name="fs_get_file"),
         Tool(_fs_create_directory, name="fs_create_directory"),
         Tool(_fs_copy_file, name="fs_copy_file"),
+        Tool(_fs_delete_file, name="fs_delete_file"),
+        Tool(_fs_move_file, name="fs_move_file"),
     ]
 
     info = PluginInfo(

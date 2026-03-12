@@ -34,6 +34,10 @@ ERR_NO_ALLOWED_PATHS = "No allowed paths configured."
 ERR_FTP_NOT_AVAILABLE = "FTP upload service is not configured."
 ERR_SOURCE_NOT_FOUND = "Source file not found: '{path}'"
 ERR_DESTINATION_EXISTS = "Destination already exists: '{path}'"
+ERR_DELETE_IS_DIRECTORY = (
+    "Cannot delete directory with fs_delete_file: '{path}'. "
+    "Only files can be deleted."
+)
 
 # System prompt extra
 SYSTEM_PROMPT_FILESYSTEM = """You have access to local filesystem tools:
@@ -51,9 +55,12 @@ this has no extension restrictions — use it for binary files (images, PDFs, et
 Returns status "created" or "exists".
 - fs_copy_file: Copy a file from source to destination. Both paths must be within \
 allowed paths. Creates parent directories if needed. Preserves file metadata.
+- fs_delete_file: Delete a file. Only files can be deleted, not directories.
+- fs_move_file: Move or rename a file from source to destination. Both paths must be \
+within allowed paths. Creates parent directories if needed.
 
 All filesystem operations are restricted to configured allowed paths. \
 Attempting to access files outside those paths will be denied.
 
-When the user asks to find, search, read, edit, or download files on their local system, \
-use these tools."""
+When the user asks to find, search, read, edit, delete, move, rename, \
+or download files on their local system, use these tools."""

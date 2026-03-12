@@ -224,6 +224,77 @@ class TestCopyFile:
         assert "Destination already exists" in result
 
 
+class TestDeleteFile:
+    def test_deletes_file(self, service: FilesystemService, sample_tree: Path) -> None:
+        target = sample_tree / "readme.md"
+        assert target.is_file()
+        result = json.loads(service.delete_file(str(target)))
+        assert result["status"] == "deleted"
+        assert not target.exists()
+
+    def test_rejects_directory(self, service: FilesystemService, sample_tree: Path) -> None:
+        result = service.delete_file(str(sample_tree / "docs"))
+        assert "Cannot delete directory" in result
+
+    def test_rejects_nonexistent(self, service: FilesystemService, sample_tree: Path) -> None:
+        result = service.delete_file(str(sample_tree / "nope.txt"))
+        assert "Not a file" in result
+
+    def test_rejects_outside_path(self, service: FilesystemService, tmp_path: Path) -> None:
+        result = service.delete_file(str(tmp_path.parent / "secret.txt"))
+        assert "Access denied" in result
+
+
+class TestMoveFile:
+    def test_moves_file(self, service: FilesystemService, sample_tree: Path) -> None:
+        src = str(sample_tree / "readme.md")
+        dst = str(sample_tree / "moved.md")
+        result = json.loads(service.move_file(src, dst))
+        assert result["status"] == "moved"
+        assert result["size"] > 0
+        assert Path(dst).read_text(encoding="utf-8") == "# Hello"
+        assert not Path(src).exists()
+
+    def test_creates_parent_dirs(self, service: FilesystemService, sample_tree: Path) -> None:
+        src = str(sample_tree / "readme.md")
+        dst = str(sample_tree / "nested" / "deep" / "moved.md")
+        result = json.loads(service.move_file(src, dst))
+        assert result["status"] == "moved"
+        assert Path(dst).is_file()
+        assert not Path(src).exists()
+
+    def test_rejects_source_outside_allowed(
+        self, service: FilesystemService, tmp_path: Path,
+    ) -> None:
+        result = service.move_file(
+            str(tmp_path.parent / "secret.txt"), str(tmp_path / "out.txt"),
+        )
+        assert "Access denied" in result
+
+    def test_rejects_destination_outside_allowed(
+        self, service: FilesystemService, sample_tree: Path, tmp_path: Path,
+    ) -> None:
+        src = str(sample_tree / "readme.md")
+        result = service.move_file(src, str(tmp_path.parent / "evil.txt"))
+        assert "Access denied" in result
+
+    def test_rejects_nonexistent_source(
+        self, service: FilesystemService, sample_tree: Path,
+    ) -> None:
+        result = service.move_file(
+            str(sample_tree / "nonexistent.txt"), str(sample_tree / "dst.txt"),
+        )
+        assert "Source file not found" in result
+
+    def test_rejects_existing_destination(
+        self, service: FilesystemService, sample_tree: Path,
+    ) -> None:
+        src = str(sample_tree / "readme.md")
+        dst = str(sample_tree / "docs" / "guide.txt")
+        result = service.move_file(src, dst)
+        assert "Destination already exists" in result
+
+
 class TestGetFile:
     def test_uploads_and_returns_url(self, service: FilesystemService, sample_tree: Path) -> None:
         ftp = MagicMock()

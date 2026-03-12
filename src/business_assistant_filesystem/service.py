@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .config import FilesystemSettings
 from .constants import (
+    ERR_DELETE_IS_DIRECTORY,
     ERR_DESTINATION_EXISTS,
     ERR_FILE_TOO_LARGE,
     ERR_FTP_NOT_AVAILABLE,
@@ -156,6 +157,46 @@ class FilesystemService:
             "destination": str(validated_dst),
             "size": size,
             "status": "copied",
+        })
+
+    def delete_file(self, path: str) -> str:
+        """Delete a file. Only files can be deleted, not directories."""
+        validated = self._validate_path(path)
+        if isinstance(validated, str):
+            return validated
+        if validated.is_dir():
+            return ERR_DELETE_IS_DIRECTORY.format(path=path)
+        if not validated.is_file():
+            return ERR_NOT_A_FILE.format(path=path)
+
+        validated.unlink()
+        return json.dumps({"path": str(validated), "status": "deleted"})
+
+    def move_file(self, source: str, destination: str) -> str:
+        """Move or rename a file from source to destination.
+
+        Both must be within allowed paths. Creates parent directories if needed.
+        """
+        validated_src = self._validate_path(source)
+        if isinstance(validated_src, str):
+            return validated_src
+        if not validated_src.is_file():
+            return ERR_SOURCE_NOT_FOUND.format(path=source)
+
+        validated_dst = self._validate_path(destination)
+        if isinstance(validated_dst, str):
+            return validated_dst
+        if validated_dst.exists():
+            return ERR_DESTINATION_EXISTS.format(path=destination)
+
+        validated_dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(validated_src), str(validated_dst))
+        size = validated_dst.stat().st_size
+        return json.dumps({
+            "source": str(validated_src),
+            "destination": str(validated_dst),
+            "size": size,
+            "status": "moved",
         })
 
     def get_file(self, path: str, ftp_service: object | None) -> str:
