@@ -108,6 +108,16 @@ class FilesystemService:
         size = len(content.encode("utf-8"))
         return json.dumps({"path": str(validated), "size": size, "status": "written"})
 
+    def write_binary(self, path: str, data: bytes) -> str:
+        """Write binary data to a file."""
+        validated = self._validate_path(path)
+        if isinstance(validated, str):
+            return validated
+
+        validated.parent.mkdir(parents=True, exist_ok=True)
+        validated.write_bytes(data)
+        return json.dumps({"path": str(validated), "size": len(data), "status": "written"})
+
     def create_directory(self, path: str) -> str:
         """Create a directory (and parents). Returns JSON with path and status."""
         validated = self._validate_path(path)

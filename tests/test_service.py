@@ -132,6 +132,26 @@ class TestWriteFile:
         assert "Access denied" in result
 
 
+class TestWriteBinary:
+    def test_write_binary_file(self, service: FilesystemService, sample_tree: Path) -> None:
+        target = str(sample_tree / "output.bin")
+        data = b"\x00\x01\x02\xff"
+        result = json.loads(service.write_binary(target, data))
+        assert result["status"] == "written"
+        assert result["size"] == 4
+        assert Path(target).read_bytes() == data
+
+    def test_creates_parent_dirs(self, service: FilesystemService, sample_tree: Path) -> None:
+        target = str(sample_tree / "new_dir" / "sub" / "file.pdf")
+        result = json.loads(service.write_binary(target, b"pdfdata"))
+        assert result["status"] == "written"
+        assert Path(target).read_bytes() == b"pdfdata"
+
+    def test_rejects_outside_path(self, service: FilesystemService, tmp_path: Path) -> None:
+        result = service.write_binary(str(tmp_path.parent / "evil.bin"), b"data")
+        assert "Access denied" in result
+
+
 class TestCreateDirectory:
     def test_creates_new_directory(self, service: FilesystemService, sample_tree: Path) -> None:
         target = str(sample_tree / "new_dir")

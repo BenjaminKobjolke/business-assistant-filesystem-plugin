@@ -56,6 +56,12 @@ def _fs_write_file(ctx: RunContext[Deps], path: str, content: str) -> str:
     return _get_service(ctx).write_file(path, content)
 
 
+def _fs_write_binary(ctx: RunContext[Deps], path: str, data: bytes) -> str:
+    """Write binary data to a file. No extension restrictions."""
+    logger.info("fs_write_binary: path=%r size=%d", path, len(data))
+    return _get_service(ctx).write_binary(path, data)
+
+
 def _fs_get_file(ctx: RunContext[Deps], path: str) -> str:
     """Upload a file to FTP and return a download URL for the user."""
     logger.info("fs_get_file: path=%r", path)
@@ -97,6 +103,7 @@ def register(registry: PluginRegistry) -> None:
         Tool(_fs_list_directory, name="fs_list_directory"),
         Tool(_fs_read_file, name="fs_read_file"),
         Tool(_fs_write_file, name="fs_write_file"),
+        Tool(_fs_write_binary, name="fs_write_binary"),
         Tool(_fs_get_file, name="fs_get_file"),
         Tool(_fs_create_directory, name="fs_create_directory"),
         Tool(_fs_copy_file, name="fs_copy_file"),

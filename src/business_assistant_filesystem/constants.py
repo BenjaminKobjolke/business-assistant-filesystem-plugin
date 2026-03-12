@@ -44,6 +44,8 @@ SYSTEM_PROMPT_FILESYSTEM = """You have access to local filesystem tools:
 - fs_write_file: Write or overwrite a text file. Only allowed for text file extensions \
 (.txt, .md, .csv, .json, .xml, .yaml, .yml, .ini, .cfg, .conf, .log, .bat, .sh, .py, \
 .js, .ts, .html, .css, .sql, .toml).
+- fs_write_binary: Write binary data to a file at a given path. Unlike fs_write_file, \
+this has no extension restrictions — use it for binary files (images, PDFs, etc.).
 - fs_get_file: Upload a file to FTP and return a download URL for the user.
 - fs_create_directory: Create a directory (and parent directories). \
 Returns status "created" or "exists".
