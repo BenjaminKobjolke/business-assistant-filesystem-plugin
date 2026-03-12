@@ -32,6 +32,8 @@ ERR_WRITE_EXTENSION_NOT_ALLOWED = (
 )
 ERR_NO_ALLOWED_PATHS = "No allowed paths configured."
 ERR_FTP_NOT_AVAILABLE = "FTP upload service is not configured."
+ERR_SOURCE_NOT_FOUND = "Source file not found: '{path}'"
+ERR_DESTINATION_EXISTS = "Destination already exists: '{path}'"
 
 # System prompt extra
 SYSTEM_PROMPT_FILESYSTEM = """You have access to local filesystem tools:
@@ -43,6 +45,10 @@ SYSTEM_PROMPT_FILESYSTEM = """You have access to local filesystem tools:
 (.txt, .md, .csv, .json, .xml, .yaml, .yml, .ini, .cfg, .conf, .log, .bat, .sh, .py, \
 .js, .ts, .html, .css, .sql, .toml).
 - fs_get_file: Upload a file to FTP and return a download URL for the user.
+- fs_create_directory: Create a directory (and parent directories). \
+Returns status "created" or "exists".
+- fs_copy_file: Copy a file from source to destination. Both paths must be within \
+allowed paths. Creates parent directories if needed. Preserves file metadata.
 
 All filesystem operations are restricted to configured allowed paths. \
 Attempting to access files outside those paths will be denied.

@@ -35,7 +35,7 @@ class TestRegister:
             tools = call_args[0][1]
 
             assert info.name == PLUGIN_NAME
-            assert len(tools) == 5
+            assert len(tools) == 7
 
             tool_names = {t.name for t in tools}
             assert tool_names == {
@@ -44,6 +44,8 @@ class TestRegister:
                 "fs_read_file",
                 "fs_write_file",
                 "fs_get_file",
+                "fs_create_directory",
+                "fs_copy_file",
             }
 
     def test_stores_service_in_plugin_data(self, tmp_path) -> None:  # type: ignore[no-untyped-def]

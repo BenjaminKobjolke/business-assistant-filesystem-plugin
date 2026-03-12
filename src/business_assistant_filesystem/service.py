@@ -4,15 +4,18 @@ from __future__ import annotations
 
 import json
 import logging
+import shutil
 from pathlib import Path
 
 from .config import FilesystemSettings
 from .constants import (
+    ERR_DESTINATION_EXISTS,
     ERR_FILE_TOO_LARGE,
     ERR_FTP_NOT_AVAILABLE,
     ERR_NOT_A_DIRECTORY,
     ERR_NOT_A_FILE,
     ERR_PATH_NOT_ALLOWED,
+    ERR_SOURCE_NOT_FOUND,
     ERR_WRITE_EXTENSION_NOT_ALLOWED,
     MAX_READ_SIZE_BYTES,
     TEXT_EXTENSIONS,
@@ -104,6 +107,46 @@ class FilesystemService:
         validated.write_text(content, encoding="utf-8")
         size = len(content.encode("utf-8"))
         return json.dumps({"path": str(validated), "size": size, "status": "written"})
+
+    def create_directory(self, path: str) -> str:
+        """Create a directory (and parents). Returns JSON with path and status."""
+        validated = self._validate_path(path)
+        if isinstance(validated, str):
+            return validated
+
+        if validated.is_dir():
+            return json.dumps({"path": str(validated), "status": "exists"})
+
+        validated.mkdir(parents=True, exist_ok=True)
+        return json.dumps({"path": str(validated), "status": "created"})
+
+    def copy_file(self, source: str, destination: str) -> str:
+        """Copy a file from source to destination.
+
+        Both must be within allowed paths. Creates parent directories if needed.
+        Returns JSON with source, destination, size, and status.
+        """
+        validated_src = self._validate_path(source)
+        if isinstance(validated_src, str):
+            return validated_src
+        if not validated_src.is_file():
+            return ERR_SOURCE_NOT_FOUND.format(path=source)
+
+        validated_dst = self._validate_path(destination)
+        if isinstance(validated_dst, str):
+            return validated_dst
+        if validated_dst.exists():
+            return ERR_DESTINATION_EXISTS.format(path=destination)
+
+        validated_dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(str(validated_src), str(validated_dst))
+        size = validated_dst.stat().st_size
+        return json.dumps({
+            "source": str(validated_src),
+            "destination": str(validated_dst),
+            "size": size,
+            "status": "copied",
+        })
 
     def get_file(self, path: str, ftp_service: object | None) -> str:
         """Upload a file to FTP and return the download URL."""

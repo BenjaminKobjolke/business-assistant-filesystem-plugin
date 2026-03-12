@@ -132,6 +132,78 @@ class TestWriteFile:
         assert "Access denied" in result
 
 
+class TestCreateDirectory:
+    def test_creates_new_directory(self, service: FilesystemService, sample_tree: Path) -> None:
+        target = str(sample_tree / "new_dir")
+        result = json.loads(service.create_directory(target))
+        assert result["status"] == "created"
+        assert Path(target).is_dir()
+
+    def test_creates_nested_directories(
+        self, service: FilesystemService, sample_tree: Path,
+    ) -> None:
+        target = str(sample_tree / "a" / "b" / "c")
+        result = json.loads(service.create_directory(target))
+        assert result["status"] == "created"
+        assert Path(target).is_dir()
+
+    def test_existing_directory_returns_exists(
+        self, service: FilesystemService, sample_tree: Path,
+    ) -> None:
+        result = json.loads(service.create_directory(str(sample_tree / "docs")))
+        assert result["status"] == "exists"
+
+    def test_rejects_outside_path(self, service: FilesystemService, tmp_path: Path) -> None:
+        result = service.create_directory(str(tmp_path.parent / "outside_dir"))
+        assert "Access denied" in result
+
+
+class TestCopyFile:
+    def test_copies_file(self, service: FilesystemService, sample_tree: Path) -> None:
+        src = str(sample_tree / "readme.md")
+        dst = str(sample_tree / "readme_copy.md")
+        result = json.loads(service.copy_file(src, dst))
+        assert result["status"] == "copied"
+        assert result["size"] > 0
+        assert Path(dst).read_text(encoding="utf-8") == "# Hello"
+
+    def test_creates_parent_dirs(self, service: FilesystemService, sample_tree: Path) -> None:
+        src = str(sample_tree / "readme.md")
+        dst = str(sample_tree / "nested" / "deep" / "copy.md")
+        result = json.loads(service.copy_file(src, dst))
+        assert result["status"] == "copied"
+        assert Path(dst).is_file()
+
+    def test_rejects_source_outside_allowed(
+        self, service: FilesystemService, tmp_path: Path,
+    ) -> None:
+        result = service.copy_file(str(tmp_path.parent / "secret.txt"), str(tmp_path / "out.txt"))
+        assert "Access denied" in result
+
+    def test_rejects_destination_outside_allowed(
+        self, service: FilesystemService, sample_tree: Path, tmp_path: Path,
+    ) -> None:
+        src = str(sample_tree / "readme.md")
+        result = service.copy_file(src, str(tmp_path.parent / "evil.txt"))
+        assert "Access denied" in result
+
+    def test_rejects_nonexistent_source(
+        self, service: FilesystemService, sample_tree: Path,
+    ) -> None:
+        src = str(sample_tree / "nonexistent.txt")
+        dst = str(sample_tree / "copy.txt")
+        result = service.copy_file(src, dst)
+        assert "Source file not found" in result
+
+    def test_rejects_existing_destination(
+        self, service: FilesystemService, sample_tree: Path,
+    ) -> None:
+        src = str(sample_tree / "readme.md")
+        dst = str(sample_tree / "docs" / "guide.txt")
+        result = service.copy_file(src, dst)
+        assert "Destination already exists" in result
+
+
 class TestGetFile:
     def test_uploads_and_returns_url(self, service: FilesystemService, sample_tree: Path) -> None:
         ftp = MagicMock()

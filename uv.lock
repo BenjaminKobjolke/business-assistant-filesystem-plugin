@@ -464,6 +464,7 @@ source = { editable = "../business-assistant-v2" }
 dependencies = [
     { name = "bot-commander", extra = ["xmpp"] },
     { name = "business-assistant-calendar-plugin" },
+    { name = "business-assistant-filesystem-plugin" },
     { name = "business-assistant-imap-plugin" },
     { name = "business-assistant-obsidian-plugin" },
     { name = "business-assistant-project-management-plugin" },
@@ -477,6 +478,7 @@ dependencies = [
 requires-dist = [
     { name = "bot-commander", extras = ["xmpp"], editable = "../bot-commander" },
     { name = "business-assistant-calendar-plugin", editable = "../business-assistant-calendar-plugin" },
+    { name = "business-assistant-filesystem-plugin", editable = "." },
     { name = "business-assistant-imap-plugin", editable = "../business-assistant-imap-plugin" },
     { name = "business-assistant-obsidian-plugin", editable = "../business-assistant-obsidian-plugin" },
     { name = "business-assistant-project-management-plugin", editable = "../business-assistant-project-management-plugin" },

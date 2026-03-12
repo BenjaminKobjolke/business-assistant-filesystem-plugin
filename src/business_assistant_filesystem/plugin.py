@@ -63,6 +63,18 @@ def _fs_get_file(ctx: RunContext[Deps], path: str) -> str:
     return _get_service(ctx).get_file(path, ftp_service)
 
 
+def _fs_create_directory(ctx: RunContext[Deps], path: str) -> str:
+    """Create a directory (and parent directories). Returns status "created" or "exists"."""
+    logger.info("fs_create_directory: path=%r", path)
+    return _get_service(ctx).create_directory(path)
+
+
+def _fs_copy_file(ctx: RunContext[Deps], source: str, destination: str) -> str:
+    """Copy a file from source to destination. Both paths must be within allowed paths."""
+    logger.info("fs_copy_file: source=%r destination=%r", source, destination)
+    return _get_service(ctx).copy_file(source, destination)
+
+
 def register(registry: PluginRegistry) -> None:
     """Register the filesystem plugin with the plugin registry.
 
@@ -86,6 +98,8 @@ def register(registry: PluginRegistry) -> None:
         Tool(_fs_read_file, name="fs_read_file"),
         Tool(_fs_write_file, name="fs_write_file"),
         Tool(_fs_get_file, name="fs_get_file"),
+        Tool(_fs_create_directory, name="fs_create_directory"),
+        Tool(_fs_copy_file, name="fs_copy_file"),
     ]
 
     info = PluginInfo(
