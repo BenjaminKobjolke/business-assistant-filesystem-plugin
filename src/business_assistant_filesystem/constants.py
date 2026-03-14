@@ -53,11 +53,9 @@ this has no extension restrictions — use it for binary files (images, PDFs, et
 - fs_get_file: Upload a file to FTP and return a download URL for the user.
 - fs_create_directory: Create a directory (and parent directories). \
 Returns status "created" or "exists".
-- fs_copy_file: Copy a file from source to destination. Both paths must be within \
-allowed paths. Creates parent directories if needed. Preserves file metadata.
-- fs_delete_file: Delete a file. Only files can be deleted, not directories.
-- fs_move_file: Move or rename a file from source to destination. Both paths must be \
-within allowed paths. Creates parent directories if needed.
+- fs_file_operation: File operations (copy, move, delete). Requires action \
+("copy", "move", or "delete") and source path. destination is required for \
+copy/move. Copy preserves file metadata. Only files can be deleted, not directories.
 
 All filesystem operations are restricted to configured allowed paths. \
 Attempting to access files outside those paths will be denied.

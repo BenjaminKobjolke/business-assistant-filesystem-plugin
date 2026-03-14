@@ -75,22 +75,33 @@ def _fs_create_directory(ctx: RunContext[Deps], path: str) -> str:
     return _get_service(ctx).create_directory(path)
 
 
-def _fs_copy_file(ctx: RunContext[Deps], source: str, destination: str) -> str:
-    """Copy a file from source to destination. Both paths must be within allowed paths."""
-    logger.info("fs_copy_file: source=%r destination=%r", source, destination)
-    return _get_service(ctx).copy_file(source, destination)
+def _fs_file_operation(
+    ctx: RunContext[Deps],
+    action: str,
+    source: str,
+    destination: str = "",
+) -> str:
+    """File operations. action: copy, move, delete.
 
-
-def _fs_delete_file(ctx: RunContext[Deps], path: str) -> str:
-    """Delete a file. Only files can be deleted, not directories."""
-    logger.info("fs_delete_file: path=%r", path)
-    return _get_service(ctx).delete_file(path)
-
-
-def _fs_move_file(ctx: RunContext[Deps], source: str, destination: str) -> str:
-    """Move or rename a file. Both paths must be within allowed paths."""
-    logger.info("fs_move_file: source=%r destination=%r", source, destination)
-    return _get_service(ctx).move_file(source, destination)
+    destination required for copy/move.
+    """
+    svc = _get_service(ctx)
+    if action == "copy":
+        logger.info(
+            "fs_file_operation copy: source=%r dest=%r",
+            source, destination,
+        )
+        return svc.copy_file(source, destination)
+    if action == "move":
+        logger.info(
+            "fs_file_operation move: source=%r dest=%r",
+            source, destination,
+        )
+        return svc.move_file(source, destination)
+    if action == "delete":
+        logger.info("fs_file_operation delete: source=%r", source)
+        return svc.delete_file(source)
+    return f"Unknown action: {action!r}. Use copy, move, or delete."
 
 
 def register(registry: PluginRegistry) -> None:
@@ -118,9 +129,7 @@ def register(registry: PluginRegistry) -> None:
         Tool(_fs_write_binary, name="fs_write_binary"),
         Tool(_fs_get_file, name="fs_get_file"),
         Tool(_fs_create_directory, name="fs_create_directory"),
-        Tool(_fs_copy_file, name="fs_copy_file"),
-        Tool(_fs_delete_file, name="fs_delete_file"),
-        Tool(_fs_move_file, name="fs_move_file"),
+        Tool(_fs_file_operation, name="fs_file_operation"),
     ]
 
     info = PluginInfo(
