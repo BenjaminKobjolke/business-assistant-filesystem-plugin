@@ -285,7 +285,7 @@ class TestMoveFile:
         result = service.move_file(
             str(sample_tree / "nonexistent.txt"), str(sample_tree / "dst.txt"),
         )
-        assert "Source file not found" in result
+        assert "Path not found" in result
 
     def test_rejects_existing_destination(
         self, service: FilesystemService, sample_tree: Path,
@@ -293,6 +293,29 @@ class TestMoveFile:
         src = str(sample_tree / "readme.md")
         dst = str(sample_tree / "docs" / "guide.txt")
         result = service.move_file(src, dst)
+        assert "Destination already exists" in result
+
+    def test_moves_directory(
+        self, service: FilesystemService, sample_tree: Path,
+    ) -> None:
+        src_dir = sample_tree / "mydir"
+        src_dir.mkdir()
+        (src_dir / "a.txt").write_text("hello", encoding="utf-8")
+        dst = str(sample_tree / "renamed_dir")
+        result = json.loads(service.move_file(str(src_dir), dst))
+        assert result["status"] == "moved"
+        assert "size" not in result
+        assert Path(dst).is_dir()
+        assert (Path(dst) / "a.txt").read_text(encoding="utf-8") == "hello"
+        assert not src_dir.exists()
+
+    def test_moves_directory_rejects_existing_destination(
+        self, service: FilesystemService, sample_tree: Path,
+    ) -> None:
+        src_dir = sample_tree / "srcdir"
+        src_dir.mkdir()
+        dst_dir = sample_tree / "docs"  # already exists from sample_tree
+        result = service.move_file(str(src_dir), str(dst_dir))
         assert "Destination already exists" in result
 
 

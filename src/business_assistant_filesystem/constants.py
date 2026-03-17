@@ -59,7 +59,8 @@ this has no extension restrictions — use it for binary files (images, PDFs, et
 Returns status "created" or "exists".
 - fs_file_operation: File operations (copy, move, delete). Requires action \
 ("copy", "move", or "delete") and source path. destination is required for \
-copy/move. Copy preserves file metadata. Only files can be deleted, not directories.
+copy/move. Copy preserves file metadata. Move supports both files and directories \
+(use it to rename or relocate folders). Only files can be deleted, not directories.
 - fs_extract_zip: Extract a zip archive. Requires source path to the zip file. \
 Optionally provide a destination directory (defaults to the zip file's parent directory). \
 All extracted paths are validated against allowed directories.

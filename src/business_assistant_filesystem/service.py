@@ -18,6 +18,7 @@ from .constants import (
     ERR_NOT_A_FILE,
     ERR_NOT_A_ZIP_FILE,
     ERR_PATH_NOT_ALLOWED,
+    ERR_PATH_NOT_FOUND,
     ERR_SOURCE_NOT_FOUND,
     ERR_WRITE_EXTENSION_NOT_ALLOWED,
     ERR_ZIP_ENTRY_OUTSIDE_ALLOWED,
@@ -176,15 +177,15 @@ class FilesystemService:
         return json.dumps({"path": str(validated), "status": "deleted"})
 
     def move_file(self, source: str, destination: str) -> str:
-        """Move or rename a file from source to destination.
+        """Move or rename a file or directory.
 
         Both must be within allowed paths. Creates parent directories if needed.
         """
         validated_src = self._validate_path(source)
         if isinstance(validated_src, str):
             return validated_src
-        if not validated_src.is_file():
-            return ERR_SOURCE_NOT_FOUND.format(path=source)
+        if not validated_src.exists():
+            return ERR_PATH_NOT_FOUND.format(path=source)
 
         validated_dst = self._validate_path(destination)
         if isinstance(validated_dst, str):
@@ -194,13 +195,14 @@ class FilesystemService:
 
         validated_dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(validated_src), str(validated_dst))
-        size = validated_dst.stat().st_size
-        return json.dumps({
+        result: dict = {
             "source": str(validated_src),
             "destination": str(validated_dst),
-            "size": size,
             "status": "moved",
-        })
+        }
+        if validated_dst.is_file():
+            result["size"] = validated_dst.stat().st_size
+        return json.dumps(result)
 
     def extract_zip(self, source: str, destination: str | None = None) -> str:
         """Extract a zip archive to a destination directory.
