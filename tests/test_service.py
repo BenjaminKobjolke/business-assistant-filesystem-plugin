@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import zipfile
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -319,3 +320,77 @@ class TestGetFile:
         ftp = MagicMock()
         result = service.get_file(str(tmp_path.parent / "secret.bin"), ftp)
         assert "Access denied" in result
+
+
+def _create_zip(zip_path: Path, files: dict[str, bytes]) -> None:
+    """Helper to create a zip file with given entries."""
+    with zipfile.ZipFile(zip_path, "w") as zf:
+        for name, data in files.items():
+            zf.writestr(name, data)
+
+
+class TestExtractZip:
+    def test_extracts_to_explicit_destination(
+        self, service: FilesystemService, sample_tree: Path,
+    ) -> None:
+        zip_path = sample_tree / "archive.zip"
+        _create_zip(zip_path, {"hello.txt": b"hi", "sub/nested.txt": b"deep"})
+        dest = sample_tree / "output"
+        result = json.loads(service.extract_zip(str(zip_path), str(dest)))
+        assert result["status"] == "extracted"
+        assert result["count"] == 2
+        assert (dest / "hello.txt").read_text() == "hi"
+        assert (dest / "sub" / "nested.txt").read_text() == "deep"
+
+    def test_extracts_to_source_parent_by_default(
+        self, service: FilesystemService, sample_tree: Path,
+    ) -> None:
+        zip_path = sample_tree / "docs" / "archive.zip"
+        _create_zip(zip_path, {"file.txt": b"content"})
+        result = json.loads(service.extract_zip(str(zip_path)))
+        assert result["status"] == "extracted"
+        assert (sample_tree / "docs" / "file.txt").read_text() == "content"
+
+    def test_creates_destination_directory(
+        self, service: FilesystemService, sample_tree: Path,
+    ) -> None:
+        zip_path = sample_tree / "archive.zip"
+        _create_zip(zip_path, {"a.txt": b"data"})
+        dest = sample_tree / "new_dir" / "deep"
+        result = json.loads(service.extract_zip(str(zip_path), str(dest)))
+        assert result["status"] == "extracted"
+        assert (dest / "a.txt").read_text() == "data"
+
+    def test_rejects_source_outside_allowed(
+        self, service: FilesystemService, tmp_path: Path,
+    ) -> None:
+        result = service.extract_zip(str(tmp_path.parent / "evil.zip"))
+        assert "Access denied" in result
+
+    def test_rejects_destination_outside_allowed(
+        self, service: FilesystemService, sample_tree: Path, tmp_path: Path,
+    ) -> None:
+        zip_path = sample_tree / "archive.zip"
+        _create_zip(zip_path, {"a.txt": b"data"})
+        result = service.extract_zip(str(zip_path), str(tmp_path.parent / "evil"))
+        assert "Access denied" in result
+
+    def test_rejects_nonexistent_source(
+        self, service: FilesystemService, sample_tree: Path,
+    ) -> None:
+        result = service.extract_zip(str(sample_tree / "nope.zip"))
+        assert "Not a file" in result
+
+    def test_rejects_non_zip_file(
+        self, service: FilesystemService, sample_tree: Path,
+    ) -> None:
+        result = service.extract_zip(str(sample_tree / "readme.md"))
+        assert "Not a valid zip file" in result
+
+    def test_rejects_zip_slip_attack(
+        self, service: FilesystemService, sample_tree: Path,
+    ) -> None:
+        zip_path = sample_tree / "malicious.zip"
+        _create_zip(zip_path, {"../../etc/passwd": b"hacked"})
+        result = service.extract_zip(str(zip_path))
+        assert "outside allowed paths" in result

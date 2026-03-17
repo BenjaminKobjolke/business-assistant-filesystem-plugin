@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import shutil
+import zipfile
 from pathlib import Path
 
 from .config import FilesystemSettings
@@ -15,9 +16,11 @@ from .constants import (
     ERR_FTP_NOT_AVAILABLE,
     ERR_NOT_A_DIRECTORY,
     ERR_NOT_A_FILE,
+    ERR_NOT_A_ZIP_FILE,
     ERR_PATH_NOT_ALLOWED,
     ERR_SOURCE_NOT_FOUND,
     ERR_WRITE_EXTENSION_NOT_ALLOWED,
+    ERR_ZIP_ENTRY_OUTSIDE_ALLOWED,
     MAX_READ_SIZE_BYTES,
     TEXT_EXTENSIONS,
 )
@@ -197,6 +200,49 @@ class FilesystemService:
             "destination": str(validated_dst),
             "size": size,
             "status": "moved",
+        })
+
+    def extract_zip(self, source: str, destination: str | None = None) -> str:
+        """Extract a zip archive to a destination directory.
+
+        Both source and destination must be within allowed paths.
+        If destination is None, extracts to the source file's parent directory.
+        All zip entry paths are validated against allowed paths before extraction.
+        """
+        validated_src = self._validate_path(source)
+        if isinstance(validated_src, str):
+            return validated_src
+        if not validated_src.is_file():
+            return ERR_NOT_A_FILE.format(path=source)
+        if not zipfile.is_zipfile(validated_src):
+            return ERR_NOT_A_ZIP_FILE.format(path=source)
+
+        if destination is not None:
+            validated_dst = self._validate_path(destination)
+            if isinstance(validated_dst, str):
+                return validated_dst
+        else:
+            validated_dst = validated_src.parent
+
+        validated_dst.mkdir(parents=True, exist_ok=True)
+
+        with zipfile.ZipFile(validated_src, "r") as zf:
+            # Zip-slip protection: validate every entry before extracting
+            for member in zf.namelist():
+                target = (validated_dst / member).resolve()
+                target_check = self._validate_path(str(target))
+                if isinstance(target_check, str):
+                    return ERR_ZIP_ENTRY_OUTSIDE_ALLOWED.format(entry=member)
+
+            zf.extractall(validated_dst)
+            extracted = [str((validated_dst / m).resolve()) for m in zf.namelist()]
+
+        return json.dumps({
+            "source": str(validated_src),
+            "destination": str(validated_dst),
+            "count": len(extracted),
+            "files": extracted,
+            "status": "extracted",
         })
 
     def get_file(self, path: str, ftp_service: object | None) -> str:

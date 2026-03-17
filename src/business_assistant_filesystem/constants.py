@@ -38,6 +38,10 @@ ERR_DELETE_IS_DIRECTORY = (
     "Cannot delete directory with fs_delete_file: '{path}'. "
     "Only files can be deleted."
 )
+ERR_NOT_A_ZIP_FILE = "Not a valid zip file: '{path}'"
+ERR_ZIP_ENTRY_OUTSIDE_ALLOWED = (
+    "Zip entry '{entry}' would extract outside allowed paths. Aborting."
+)
 
 # System prompt extra
 SYSTEM_PROMPT_FILESYSTEM = """You have access to local filesystem tools:
@@ -56,6 +60,9 @@ Returns status "created" or "exists".
 - fs_file_operation: File operations (copy, move, delete). Requires action \
 ("copy", "move", or "delete") and source path. destination is required for \
 copy/move. Copy preserves file metadata. Only files can be deleted, not directories.
+- fs_extract_zip: Extract a zip archive. Requires source path to the zip file. \
+Optionally provide a destination directory (defaults to the zip file's parent directory). \
+All extracted paths are validated against allowed directories.
 
 All filesystem operations are restricted to configured allowed paths. \
 Attempting to access files outside those paths will be denied.

@@ -75,6 +75,18 @@ def _fs_create_directory(ctx: RunContext[Deps], path: str) -> str:
     return _get_service(ctx).create_directory(path)
 
 
+def _fs_extract_zip(
+    ctx: RunContext[Deps], source: str, destination: str | None = None
+) -> str:
+    """Extract a zip archive. Extracts to the zip's parent directory by default.
+
+    Optionally provide a destination directory.
+    All extracted paths are validated against allowed directories.
+    """
+    logger.info("fs_extract_zip: source=%r destination=%r", source, destination)
+    return _get_service(ctx).extract_zip(source, destination)
+
+
 def _fs_file_operation(
     ctx: RunContext[Deps],
     action: str,
@@ -129,6 +141,7 @@ def register(registry: PluginRegistry) -> None:
         Tool(_fs_write_binary, name="fs_write_binary"),
         Tool(_fs_get_file, name="fs_get_file"),
         Tool(_fs_create_directory, name="fs_create_directory"),
+        Tool(_fs_extract_zip, name="fs_extract_zip"),
         Tool(_fs_file_operation, name="fs_file_operation"),
     ]
 
